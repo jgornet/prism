@@ -1,0 +1,9 @@
+// The health server of this build: the gateway at health.jamesgornet.com,
+// in front of Open Health Sync. Committed.
+//
+// With an address here, the Health access page signs in to that server, the
+// wearables connect through it, and Apple Health uploads to it. Empty keeps
+// the Soma behaviour: wearables through the account's `ohs` function.
+// "//" starts a comment in an xcconfig, so the address is written with an
+// empty $() between the slashes; Xcode joins it back to https://...
+HEALTH_SERVER_URL = https:/$()/health.jamesgornet.com

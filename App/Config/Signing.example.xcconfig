@@ -2,8 +2,9 @@
 //
 // Your own Apple developer team and a bundle id that team can register. The
 // widget extension takes the same id with ".SomaWidgets" added. The app group in
-// the entitlements files (group.Soma.Prism) belongs to Soma: change it to a group
-// you own before you run on a Mac or a device.
-PRISM_BUNDLE_ID = com.example.Prism
+// the entitlements files and SnapshotStore.appGroup is group.com.jamesgornet.prism
+// on the health-server branch: register it in your team, or change all three.
+// The health-server build uses com.jamesgornet.prism.
+PRISM_BUNDLE_ID = com.jamesgornet.prism
 // The ten character team id, from developer.apple.com, Membership details.
 PRISM_DEVELOPMENT_TEAM = ABCDE12345

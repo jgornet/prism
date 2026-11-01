@@ -226,7 +226,7 @@ to a package is not verified by the package alone: build the app against it too.
 - `App/Config/Prism.xcconfig` includes `Cloud.xcconfig`, then the git ignored
   `Signing.xcconfig` and `Supabase.xcconfig`. Never commit either of the last
   two; the build workflow fails if one is in the tree.
-- The app group `group.Soma.Prism` is written in three places: both
+- The app group `group.com.jamesgornet.prism` is written in three places: both
   entitlements files that carry it and `SnapshotStore.appGroup` in
   `App/SomaWidgetKit`. Change all three together.
 - HealthKit returns nothing in the Simulator. The permission sheet appears and

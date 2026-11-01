@@ -2,7 +2,7 @@ import Foundation
 
 /// Reads and writes the widget snapshot as `snapshot.json` in a shared directory.
 public struct SnapshotStore: Sendable {
-    public static let appGroup = "group.Soma.Prism"
+    public static let appGroup = "group.com.jamesgornet.prism"
 
     private static let fileName = "snapshot.json"
 

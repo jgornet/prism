@@ -49,7 +49,9 @@ nonisolated enum ProviderConnectionState: Equatable, Sendable {
 /// With an account, the providers Open Health Sync knows connect there
 /// instead (``connectThroughOHS(_:authenticate:)``): the instance signs in,
 /// keeps the grant and pulls the data, and ``refreshFromOHS()`` reads where
-/// each connection stands. No token reaches the phone on that path.
+/// each connection stands. No token reaches the phone on that path. A build
+/// with a health server talks to its gateway instead of the function
+/// (``OHSClient/preferred``).
 @MainActor
 @Observable
 final class ProviderConnections {
@@ -65,7 +67,7 @@ final class ProviderConnections {
     @ObservationIgnored let exchanger: any TokenExchanging
     @ObservationIgnored let ohs: OHSClient
 
-    init(tokens: any ProviderTokenStore = KeychainTokenStore(), exchanger: any TokenExchanging = URLSessionTokenExchanger(), ohs: OHSClient = .live) {
+    init(tokens: any ProviderTokenStore = KeychainTokenStore(), exchanger: any TokenExchanging = URLSessionTokenExchanger(), ohs: OHSClient = .preferred) {
         self.tokens = tokens
         self.exchanger = exchanger
         self.ohs = ohs

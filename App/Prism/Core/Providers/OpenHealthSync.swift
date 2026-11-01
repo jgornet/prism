@@ -90,6 +90,9 @@ nonisolated enum OHSError: Error, Equatable, Sendable {
 /// Everything goes through the `ohs` Edge Function with the person's own
 /// session: the instance's key reads every person on it, so it stays in the
 /// function, and the function only ever touches the signed in person's user.
+/// A build with a health server (``HealthServerSettings``) sends the same
+/// bodies to the gateway's `/app/v1/ohs` instead (``gateway``), which does the
+/// same for the signed in member.
 ///
 /// ```swift
 /// let link = try await OHSClient.live.connectURL(provider: "oura")
@@ -179,6 +182,55 @@ nonisolated struct OHSClient: Sendable {
     static func date(_ text: String) -> Date? {
         if let date = try? Date(text, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)) { return date }
         return try? Date(text, strategy: Date.ISO8601FormatStyle())
+    }
+
+    // MARK: Gateway
+
+    /// The client of this build: the health server when it has one, else the
+    /// Supabase function.
+    static var preferred: OHSClient {
+        HealthServerSettings.current != nil ? .gateway : .live
+    }
+
+    /// The health server's client: the member's session from
+    /// ``HealthServerSession``, refreshed once on a 401.
+    static let gateway = OHSClient { body in
+        let (settings, credentials) = try await MainActor.run { () throws -> (HealthServerSettings, HealthServerCredentials) in
+            let session = HealthServerSession.shared
+            guard let settings = session.settings, let credentials = session.credentials, session.isSignedIn else { throw OHSError.signedOut }
+            return (settings, credentials)
+        }
+        return try await OHSClient.gatewayClient(settings: settings, tokens: credentials).send(body)
+    }
+
+    /// The gateway's client for one server and one token source. The tests
+    /// pass a stub for `http`.
+    static func gatewayClient(
+        settings: HealthServerSettings,
+        tokens: any HealthServerTokenProviding,
+        http: @escaping HealthServerHTTP = HealthServerTransport.urlSession
+    ) -> OHSClient {
+        OHSClient { body in
+            let request = try OHSClient.gatewayRequest(settings: settings, body: body)
+            do {
+                return try await HealthServerTransport.send(request, tokens: tokens, http: http)
+            } catch let error as HealthServerError {
+                throw error == .offline ? OHSError.offline : OHSError.signedOut
+            } catch is URLError {
+                throw OHSError.offline
+            }
+        }
+    }
+
+    /// `POST /app/v1/ohs` with the body of the Supabase function, unchanged.
+    /// The bearer token is added by ``HealthServerTransport``.
+    static func gatewayRequest(settings: HealthServerSettings, body: [String: String]) throws -> URLRequest {
+        var request = URLRequest(url: settings.url("/app/v1/ohs"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+        return request
     }
 
     // MARK: Live

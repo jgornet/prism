@@ -83,6 +83,14 @@ nonisolated struct DataProvider: Identifiable, Sendable, Equatable {
 
     /// Whether Open Health Sync can connect it.
     var connectsThroughOHS: Bool { ohsSlug != nil }
+
+    /// Whether it connects through Open Health Sync in a build with or
+    /// without a health server. The health server connects only the
+    /// providers it has an app for (``HealthServerSettings/providerSlugs``).
+    func connectsThroughOHS(healthServer: Bool) -> Bool {
+        guard let ohsSlug else { return false }
+        return !healthServer || HealthServerSettings.providerSlugs.contains(ohsSlug)
+    }
 }
 
 extension DataProvider {

@@ -59,6 +59,16 @@ Every table has row level security: a signed in person reads and writes only the
 
 On Soma's project, Soma Labs, Inc. runs the servers. Its own privacy policy is at https://www.somalabs.me/legal/privacy. On a project you host, you do.
 
+## Health server mode
+
+The `health-server` branch of this fork adds a third mode. `App/Config/HealthServer.xcconfig` names a health server: a gateway, at `health.jamesgornet.com` in this build, in front of an Open Health Sync instance (`App/Prism/Core/Account/HealthServerSettings.swift`). With an address there, the Health access page has a Health server section. Nothing in this section is sent until you tap Sign in there.
+
+- **Sign in.** The gateway's own sign in page opens in the system's web authentication sheet. You sign in there with Apple or with Google, and approve the app for uploads and the connect pages. The app gets an access token and a refresh token from the gateway, kept in the Keychain on this device only (`App/Prism/Core/Account/HealthServerSession.swift`). The app asks the gateway who is signed in (`GET /app/v1/me`) to show the member's name.
+- **Wearables.** The Connect buttons send the same requests as cloud mode's `ohs` function, to the gateway's `/app/v1/ohs` instead (`App/Prism/Core/Providers/OpenHealthSync.swift`). The gateway answers for your own user on the instance only. The provider's sign in happens on the provider's own site, and no provider token reaches the phone.
+- **Sign out** revokes the app's grant at the gateway (`/auth/revoke`) and deletes both tokens from the Keychain.
+
+The owner of the health server runs it, and its design is in `designs/health-mcp.org` of `jgornet/health-mcp`.
+
 ## Export your data
 
 Settings, Data, Export my data. Prism builds one ZIP on the device (`App/Prism/Core/Cloud/DataExport.swift`) holding:

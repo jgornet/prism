@@ -11,6 +11,8 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>HealthServerURL</key>
+	<string>$(HEALTH_SERVER_URL)</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>With Always, your phone notes where it stays overnight so Soma can show where you sleep. Those places stay on this phone.</string>
 	<key>CFBundleURLTypes</key>

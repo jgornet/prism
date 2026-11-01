@@ -14,9 +14,14 @@ import AuthenticationServices
 ///
 /// With an account, every provider Open Health Sync knows signs in there and
 /// sits under Connect, with when it last pulled.
+///
+/// A build with a health server shows a Health server section first: the
+/// server, the member signed in to it, and Sign out. The wearables then
+/// connect through that server, and only the ones it has an app for.
 struct HealthAccessPage: View {
     @Environment(HealthDashboard.self) private var health
     @State private var account = AccountSession.shared
+    @State private var healthServer = HealthServerSession.shared
     @Environment(\.openURL) private var openURL
     @Environment(\.somaTheme) private var theme
     @State private var connections = ProviderConnections.shared
@@ -45,6 +50,13 @@ struct HealthAccessPage: View {
 
     var body: some View {
         ListScaffold(eyebrow: "Settings", title: "Health access") {
+            if healthServer.isConfigured {
+                SettingsSection("Health server") {
+                    SomaBrowseGroup(healthServerRows) { row in
+                        healthServerRow(row)
+                    }
+                }
+            }
             ForEach(groups) { group in
                 SettingsSection(group.heading) {
                     SomaBrowseGroup(group.providers) { provider in
@@ -53,16 +65,95 @@ struct HealthAccessPage: View {
                 }
             }
         }
-        .task(id: account.isSignedIn) {
-            if account.isSignedIn { await connections.refreshFromOHS() }
+        .task(id: signedInForOHS) {
+            if signedInForOHS { await connections.refreshFromOHS() }
+            if healthServer.isSignedIn { await healthServer.refreshMember() }
         }
+    }
+
+    /// Who the wearables connect for: the member of the health server in a
+    /// build that has one, else the account.
+    private var signedInForOHS: Bool {
+        healthServer.isConfigured ? healthServer.isSignedIn : account.isSignedIn
+    }
+
+    // MARK: Health server
+
+    private enum HealthServerRow: String, Identifiable {
+        case server, signOut
+        var id: String { rawValue }
+    }
+
+    private var healthServerRows: [HealthServerRow] {
+        healthServer.isSignedIn ? [.server, .signOut] : [.server]
+    }
+
+    @ViewBuilder
+    private func healthServerRow(_ row: HealthServerRow) -> some View {
+        switch row {
+        case .server:
+            SettingsTileLine(healthServer.settings?.host ?? "", symbol: "server.rack", detail: healthServerDetail) {
+                switch healthServer.state {
+                case .signingIn:
+                    ProgressView().controlSize(.small)
+                case .signedIn:
+                    SettingsStateDot(isOn: true)
+                case .signedOut, .failed:
+                    if Self.canSignIn {
+                        Button { signInToHealthServer() } label: {
+                            Text(healthServer.state == .signedOut ? "Sign in" : "Retry")
+                                .somaFont(theme.typography.rowValue)
+                                .foregroundStyle(theme.colors.accent.color)
+                                .frame(minHeight: theme.metrics.minimumTapTarget)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        SettingsStateDot(isOn: false)
+                    }
+                }
+            }
+        case .signOut:
+            SettingsTileRow(String(localized: "Sign out of the health server"), symbol: "rectangle.portrait.and.arrow.right",
+                            role: .destructive, opensSomething: false, action: {
+                Task { await healthServer.signOut() }
+            })
+        }
+    }
+
+    private var healthServerDetail: String {
+        switch healthServer.state {
+        case .signedIn:
+            if let label = healthServer.member?.label {
+                return String(localized: "Signed in as \(label), upload and connect")
+            }
+            return String(localized: "Signed in, upload and connect")
+        case .signingIn: return String(localized: "Signing in")
+        case .signedOut: return String(localized: "Not signed in")
+        case .failed(let message): return message
+        }
+    }
+
+    private func signInToHealthServer() {
+        #if !os(visionOS)
+        Task {
+            await healthServer.signIn { url, scheme in
+                try await webAuthentication.authenticate(
+                    using: url, callback: .customScheme(scheme),
+                    preferredBrowserSession: .ephemeral, additionalHeaderFields: [:]
+                )
+            }
+            if healthServer.isSignedIn { await connections.refreshFromOHS() }
+        }
+        #endif
     }
 
     /// Whether this row connects through Open Health Sync: the provider is one
     /// it knows, someone is signed in, and the instance has not said it is
     /// missing.
     private func usesOHS(_ provider: DataProvider) -> Bool {
-        provider.connectsThroughOHS && account.isSignedIn && connections.ohsAvailable != false && Self.canSignIn
+        provider.connectsThroughOHS(healthServer: healthServer.isConfigured) && signedInForOHS
+            && connections.ohsAvailable != false && Self.canSignIn
     }
 
     @ViewBuilder
