@@ -51,6 +51,8 @@ struct PrismApp: App {
         LongevityCache.shared.attach(HealthDashboard.launchSnapshots(for: source) == nil ? nil : .shared)
         SomaNotificationRouter.install()
         CloudBackground.register()
+        // The health server's Apple Health upload, in a build that has one.
+        HealthServerUploader.register()
         // A visit relaunches the app with no window: the listener has to be
         // up before any view, or the visit goes to nobody.
         SleepPlaceRecorder.launch()

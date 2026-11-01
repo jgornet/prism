@@ -87,6 +87,7 @@
 				<string>A100000000000000000001</string>
 				<string>A200000000000000000001</string>
 				<string>A500000000000000000001</string>
+				<string>A600000000000000000001</string>
 			</array>
 			<key>preferredProjectObjectVersion</key>
 			<string>77</string>
@@ -137,6 +138,8 @@
 				<string>A20000000000000000000D</string>
 				<string>A500000000000000000003</string>
 				<string>D70000000000000000000012</string>
+				<string>A600000000000000000003</string>
+				<string>A600000000000000000005</string>
 			</array>
 			<key>isa</key>
 			<string>PBXFrameworksBuildPhase</string>
@@ -185,6 +188,8 @@
 				<string>A20000000000000000000C</string>
 				<string>A500000000000000000002</string>
 				<string>D70000000000000000000011</string>
+				<string>A600000000000000000002</string>
+				<string>A600000000000000000004</string>
 			</array>
 			<key>productName</key>
 			<string>Prism</string>
@@ -1251,6 +1256,45 @@
 			<string>PBXBuildFile</string>
 			<key>productRef</key>
 			<string>A20000000000000000000C</string>
+		</dict>
+		<key>A600000000000000000001</key>
+		<dict>
+			<key>isa</key>
+			<string>XCLocalSwiftPackageReference</string>
+			<key>relativePath</key>
+			<string>../Packages/OpenHealthSync</string>
+		</dict>
+		<key>A600000000000000000002</key>
+		<dict>
+			<key>isa</key>
+			<string>XCSwiftPackageProductDependency</string>
+			<key>package</key>
+			<string>A600000000000000000001</string>
+			<key>productName</key>
+			<string>OpenHealthSync</string>
+		</dict>
+		<key>A600000000000000000003</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>productRef</key>
+			<string>A600000000000000000002</string>
+		</dict>
+		<key>A600000000000000000004</key>
+		<dict>
+			<key>isa</key>
+			<string>XCSwiftPackageProductDependency</string>
+			<key>package</key>
+			<string>A600000000000000000001</string>
+			<key>productName</key>
+			<string>OpenHealthSyncHealthKit</string>
+		</dict>
+		<key>A600000000000000000005</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>productRef</key>
+			<string>A600000000000000000004</string>
 		</dict>
 		<key>A500000000000000000001</key>
 		<dict>

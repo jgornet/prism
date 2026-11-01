@@ -8,6 +8,7 @@
 		<string>Soma.Prism.cloud-refresh</string>
 		<string>Soma.Prism.widgets.refresh</string>
 		<string>Soma.Prism.health-upload</string>
+		<string>Soma.Prism.health-server-upload</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

@@ -18,8 +18,12 @@ private struct SomaCloudModifier: ViewModifier {
             .task { CloudSync.shared.attach(health: health, journal: journal) }
             .onChange(of: phase) { _, phase in
                 switch phase {
-                case .active: Task { await CloudSync.shared.syncNow() }
-                case .background: CloudBackground.schedule()
+                case .active:
+                    Task { await CloudSync.shared.syncNow() }
+                    Task { await HealthServerUploader.shared.uploadNow() }
+                case .background:
+                    CloudBackground.schedule()
+                    HealthServerUploader.schedule()
                 default: break
                 }
             }

@@ -22,6 +22,7 @@ struct HealthAccessPage: View {
     @Environment(HealthDashboard.self) private var health
     @State private var account = AccountSession.shared
     @State private var healthServer = HealthServerSession.shared
+    @State private var uploader = HealthServerUploader.shared
     @Environment(\.openURL) private var openURL
     @Environment(\.somaTheme) private var theme
     @State private var connections = ProviderConnections.shared
@@ -80,12 +81,12 @@ struct HealthAccessPage: View {
     // MARK: Health server
 
     private enum HealthServerRow: String, Identifiable {
-        case server, signOut
+        case server, upload, signOut
         var id: String { rawValue }
     }
 
     private var healthServerRows: [HealthServerRow] {
-        healthServer.isSignedIn ? [.server, .signOut] : [.server]
+        healthServer.isSignedIn ? [.server, .upload, .signOut] : [.server]
     }
 
     @ViewBuilder
@@ -113,11 +114,57 @@ struct HealthAccessPage: View {
                     }
                 }
             }
+        case .upload:
+            SettingsTileLine(String(localized: "Apple Health upload"), symbol: "arrow.up.heart", detail: uploadDetail) {
+                uploadControl
+            }
         case .signOut:
             SettingsTileRow(String(localized: "Sign out of the health server"), symbol: "rectangle.portrait.and.arrow.right",
                             role: .destructive, opensSomething: false, action: {
                 Task { await healthServer.signOut() }
             })
+        }
+    }
+
+    @ViewBuilder
+    private var uploadControl: some View {
+        switch uploader.state {
+        case .uploading:
+            ProgressView().controlSize(.small)
+        case .paused:
+            uploadButton("Turn on uploads") { Task { await uploader.turnOnUploads() } }
+        case .idle, .failed:
+            uploadButton("Upload now") { Task { await uploader.uploadNow() } }
+        }
+    }
+
+    private func uploadButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .somaFont(theme.typography.rowValue)
+                .foregroundStyle(theme.colors.accent.color)
+                .frame(minHeight: theme.metrics.minimumTapTarget)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The upload's line: the last upload, or whose user the Apple Health of
+    /// this iPhone would go to when another member signed in (open question 27).
+    private var uploadDetail: String {
+        switch uploader.state {
+        case .uploading:
+            return String(localized: "Uploading")
+        case .paused:
+            let who = healthServer.member?.label ?? String(localized: "the member signed in")
+            return String(localized: "Uploads stopped. Turn on to send this iPhone's Apple Health to \(who)")
+        case .failed(let message):
+            return message
+        case .idle:
+            guard let last = uploader.lastUpload else { return String(localized: "Not uploaded yet") }
+            let when = last.formatted(date: .omitted, time: .shortened)
+            if let types = uploader.lastTypeCount { return String(localized: "Last upload \(when), \(types) types") }
+            return String(localized: "Last upload \(when)")
         }
     }
 
